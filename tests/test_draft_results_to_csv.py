@@ -28,6 +28,20 @@ class DraftResultsTests(unittest.TestCase):
             draft.to_dict("records"),
             [
                 {
+                    "Manager": "Team A",
+                    "Player": "Ja'Marr Chase Cin - WR",
+                    "Keeper": "",
+                    "Draft Round": 1,
+                    "Pick": 1,
+                },
+                {
+                    "Manager": "Team B",
+                    "Player": "Saquon Barkley Phi - RB",
+                    "Keeper": "",
+                    "Draft Round": 1,
+                    "Pick": 2,
+                },
+                {
                     "Manager": "Team C",
                     "Player": "George Kittle SF - TE",
                     "Keeper": "",
@@ -37,7 +51,7 @@ class DraftResultsTests(unittest.TestCase):
             ],
         )
 
-    def test_ignores_first_three_picks_including_empty_placeholders(self):
+    def test_keeps_first_three_picks_and_skips_empty_placeholders(self):
         draft_text = """\
 Round 4
 1. Jayden Higgins
@@ -55,9 +69,39 @@ Team D
 
         draft = parse_draft_text(draft_text, "draft.txt")
 
-        self.assertEqual(len(draft), 1)
-        self.assertEqual(draft.iloc[0]["Player"], "George Kittle SF - TE")
-        self.assertEqual(draft.iloc[0]["Pick"], 4)
+        self.assertEqual(draft["Pick"].tolist(), [1, 3, 4])
+        self.assertEqual(
+            draft["Player"].tolist(),
+            [
+                "Jayden Higgins Hou - WR",
+                "Ollie Gordon II Mia - RB",
+                "George Kittle SF - TE",
+            ],
+        )
+
+    def test_snake_draft_manager_alternates_between_pick_eight_and_three(self):
+        draft_text = """\
+Round 4
+3. Even Round Player
+(NYJ - RB)
+Blouses
+Round 5
+8. Odd Round Player
+(Buf - WR)
+Blouses
+Round 6
+3. Next Even Round Player
+(GB - TE)
+Blouses
+"""
+
+        draft = parse_draft_text(draft_text, "draft.txt")
+        keepers = create_keeper_dataframe(draft, draft_year=2030)
+
+        self.assertEqual(
+            keepers["2030 Draft Position"].tolist(),
+            ["Round 4, Pick 3", "Round 5, Pick 8", "Round 6, Pick 3"],
+        )
 
     def test_marks_keeper_and_removes_marker_from_player_name(self):
         draft_text = """\

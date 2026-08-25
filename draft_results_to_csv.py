@@ -65,18 +65,12 @@ def parse_draft_text(text: str, source_name: str = "input") -> pd.DataFrame:
                 f"{source_name}:{line_number}: pick must be greater than zero"
             )
 
-        # Ignore the first three picks in each round as complete blocks. This
-        # also handles one-line placeholders such as "2. --empty-- Team Name".
-        # Draft rounds 1-3 are ineligible as well, regardless of pick number.
-        if pick <= 3 or current_round <= 3:
+        player_text = pick_match.group(2).strip()
+
+        # Empty draft slots contain the manager on the same line and do not
+        # have the normal team/position and manager lines.
+        if player_text.casefold().startswith("--empty--"):
             index += 1
-            while index < len(lines):
-                next_line = lines[index][1]
-                if ROUND_PATTERN.fullmatch(next_line) or PICK_PATTERN.fullmatch(
-                    next_line
-                ):
-                    break
-                index += 1
             continue
 
         if index + 2 >= len(lines):
@@ -94,7 +88,6 @@ def parse_draft_text(text: str, source_name: str = "input") -> pd.DataFrame:
                 f"found {team_line!r}"
             )
 
-        player_text = pick_match.group(2).strip()
         keeper = "Yes" if KEEPER_MARKER in player_text else ""
         player_name = player_text.replace(KEEPER_MARKER, "").strip()
         team_position = team_match.group(1).strip()
@@ -118,8 +111,9 @@ def create_keeper_dataframe(draft: pd.DataFrame, draft_year: int) -> pd.DataFram
     draft_position_column = f"{draft_year} Draft Position"
     keeper_round_column = f"{next_year} Round"
 
-    # Rounds 1-3 cannot move up three rounds, and picks 1-3 are excluded.
-    eligible = (draft["Draft Round"] > 3) & (draft["Pick"] > 3)
+    # Rounds 1-3 cannot move up three rounds. Every pick number in later
+    # rounds remains eligible, including Picks 1, 2, and 3.
+    eligible = draft["Draft Round"] > 3
     keepers = draft.loc[eligible].copy()
 
     keepers[draft_position_column] = (
