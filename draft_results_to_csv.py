@@ -57,6 +57,27 @@ def parse_draft_text(text: str, source_name: str = "input") -> pd.DataFrame:
             raise ValueError(
                 f"{source_name}:{line_number}: player appears before a round heading"
             )
+
+        pick = int(pick_match.group(1))
+        if pick == 0:
+            raise ValueError(
+                f"{source_name}:{line_number}: pick must be greater than zero"
+            )
+
+        # Ignore the first three picks in each round as complete blocks. This
+        # also handles one-line placeholders such as "2. --empty-- Team Name".
+        # Draft rounds 1-3 are ineligible as well, regardless of pick number.
+        if pick <= 3 or current_round <= 3:
+            index += 1
+            while index < len(lines):
+                next_line = lines[index][1]
+                if ROUND_PATTERN.fullmatch(next_line) or PICK_PATTERN.fullmatch(
+                    next_line
+                ):
+                    break
+                index += 1
+            continue
+
         if index + 2 >= len(lines):
             raise ValueError(
                 f"{source_name}:{line_number}: player entry is missing the "
@@ -70,12 +91,6 @@ def parse_draft_text(text: str, source_name: str = "input") -> pd.DataFrame:
             raise ValueError(
                 f"{source_name}:{team_line_number}: expected '(Team - Position)'; "
                 f"found {team_line!r}"
-            )
-
-        pick = int(pick_match.group(1))
-        if pick == 0:
-            raise ValueError(
-                f"{source_name}:{line_number}: pick must be greater than zero"
             )
 
         player_name = pick_match.group(2).strip()
@@ -99,8 +114,9 @@ def create_keeper_dataframe(draft: pd.DataFrame, draft_year: int) -> pd.DataFram
     draft_position_column = f"{draft_year} Draft Position"
     keeper_round_column = f"{next_year} Round"
 
-    # Rounds 1-3 cannot move up three rounds, so those players are ineligible.
-    keepers = draft.loc[draft["Draft Round"] > 3].copy()
+    # Rounds 1-3 cannot move up three rounds, and picks 1-3 are excluded.
+    eligible = (draft["Draft Round"] > 3) & (draft["Pick"] > 3)
+    keepers = draft.loc[eligible].copy()
 
     keepers[draft_position_column] = (
         "Round "
@@ -196,11 +212,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: could not write {output_path}: {error}", file=sys.stderr)
         return 2
 
-    skipped = len(draft) - len(keepers)
-    print(
-        f"Wrote {len(keepers)} player(s) to {output_path}; "
-        f"skipped {skipped} player(s) drafted in rounds 1-3."
-    )
+    print(f"Wrote {len(keepers)} eligible player(s) to {output_path}.")
     return 0
 
 

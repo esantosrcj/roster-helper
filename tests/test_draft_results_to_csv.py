@@ -28,18 +28,6 @@ class DraftResultsTests(unittest.TestCase):
             draft.to_dict("records"),
             [
                 {
-                    "Manager": "Team A",
-                    "Player": "Ja'Marr Chase Cin - WR",
-                    "Draft Round": 1,
-                    "Pick": 1,
-                },
-                {
-                    "Manager": "Team B",
-                    "Player": "Saquon Barkley Phi - RB",
-                    "Draft Round": 1,
-                    "Pick": 2,
-                },
-                {
                     "Manager": "Team C",
                     "Player": "George Kittle SF - TE",
                     "Draft Round": 4,
@@ -47,6 +35,28 @@ class DraftResultsTests(unittest.TestCase):
                 },
             ],
         )
+
+    def test_ignores_first_three_picks_including_empty_placeholders(self):
+        draft_text = """\
+Round 4
+1. Jayden Higgins
+(Hou - WR)
+Team A
+2. --empty--\tTeam B
+3. Ollie Gordon II
+(Mia - RB)
+Team C
+
+4. George Kittle
+(SF - TE)
+Team D
+"""
+
+        draft = parse_draft_text(draft_text, "draft.txt")
+
+        self.assertEqual(len(draft), 1)
+        self.assertEqual(draft.iloc[0]["Player"], "George Kittle SF - TE")
+        self.assertEqual(draft.iloc[0]["Pick"], 4)
 
     def test_dataframe_calculates_keeper_round_and_output_columns(self):
         draft = parse_draft_text(DRAFT_TEXT)
@@ -68,7 +78,7 @@ class DraftResultsTests(unittest.TestCase):
     def test_reports_malformed_team_position_line(self):
         malformed = """\
 Round 4
-1. A Player
+4. A Player
 Not parenthesized
 A Manager
 """

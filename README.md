@@ -4,7 +4,9 @@ Convert a fantasy-football draft export into a CSV containing each player's
 projected keeper round for the following season. The keeper cost moves up three
 rounds, so a player drafted in Round 4 costs a Round 1 pick the next season.
 Players drafted in Rounds 1–3 are omitted because they cannot move up three
-rounds.
+rounds. Picks 1–3 within each round are also ignored as complete entries. This
+allows an ignored pick to use either the normal three-line format or an
+abbreviated placeholder such as `2. --empty-- Team Name`.
 
 ## Input
 
