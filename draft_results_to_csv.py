@@ -14,8 +14,9 @@ import pandas as pd
 ROUND_PATTERN = re.compile(r"Round\s+(\d+)", re.IGNORECASE)
 PICK_PATTERN = re.compile(r"(\d+)\.\s+(.+)")
 TEAM_POSITION_PATTERN = re.compile(r"\((.+)\)")
+KEEPER_MARKER = "\ue03e"
 
-RAW_COLUMNS = ["Manager", "Player", "Draft Round", "Pick"]
+RAW_COLUMNS = ["Manager", "Player", "Keeper", "Draft Round", "Pick"]
 
 
 def parse_draft_text(text: str, source_name: str = "input") -> pd.DataFrame:
@@ -93,12 +94,15 @@ def parse_draft_text(text: str, source_name: str = "input") -> pd.DataFrame:
                 f"found {team_line!r}"
             )
 
-        player_name = pick_match.group(2).strip()
+        player_text = pick_match.group(2).strip()
+        keeper = "Yes" if KEEPER_MARKER in player_text else ""
+        player_name = player_text.replace(KEEPER_MARKER, "").strip()
         team_position = team_match.group(1).strip()
         records.append(
             {
                 "Manager": manager,
                 "Player": f"{player_name} {team_position}",
+                "Keeper": keeper,
                 "Draft Round": current_round,
                 "Pick": pick,
             }
@@ -129,6 +133,7 @@ def create_keeper_dataframe(draft: pd.DataFrame, draft_year: int) -> pd.DataFram
     output_columns = [
         "Manager",
         "Player",
+        "Keeper",
         draft_position_column,
         keeper_round_column,
     ]

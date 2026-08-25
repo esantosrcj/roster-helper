@@ -27,6 +27,17 @@ Blank lines and indentation are optional. The script joins the player and
 team/position lines, so `Ja'Marr Chase` and `(Cin - WR)` become
 `Ja'Marr Chase Cin - WR` in the CSV.
 
+A `` after a player name marks that player as a keeper:
+
+```text
+5. Jayden Daniels 
+   (Was - QB)
+   Team A
+```
+
+The marker is removed from the player's name, and the output `Keeper` column is
+set to `Yes`. Players without the marker have a blank `Keeper` value.
+
 ## Usage
 
 Install pandas, then run the converter:
@@ -51,14 +62,14 @@ python3 draft_results_to_csv.py --draft-year 2030 league_a.txt league_b.txt \
 The output columns are generated from `--draft-year`:
 
 ```text
-Manager,Player,<draft year> Draft Position,<next year> Round
+Manager,Player,Keeper,<draft year> Draft Position,<next year> Round
 ```
 
 For the example command above, an output row would be:
 
 ```csv
-Manager,Player,2030 Draft Position,2031 Round
-Team A,George Kittle SF - TE,"Round 4, Pick 7",1
+Manager,Player,Keeper,2030 Draft Position,2031 Round
+Team A,Jayden Daniels Was - QB,Yes,"Round 5, Pick 5",2
 ```
 
 Run the tests with:

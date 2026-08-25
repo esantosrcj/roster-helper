@@ -30,6 +30,7 @@ class DraftResultsTests(unittest.TestCase):
                 {
                     "Manager": "Team C",
                     "Player": "George Kittle SF - TE",
+                    "Keeper": "",
                     "Draft Round": 4,
                     "Pick": 7,
                 },
@@ -58,6 +59,20 @@ Team D
         self.assertEqual(draft.iloc[0]["Player"], "George Kittle SF - TE")
         self.assertEqual(draft.iloc[0]["Pick"], 4)
 
+    def test_marks_keeper_and_removes_marker_from_player_name(self):
+        draft_text = """\
+Round 5
+5. Jayden Daniels \ue03e
+(Was - QB)
+Team F
+"""
+
+        draft = parse_draft_text(draft_text, "draft.txt")
+        keepers = create_keeper_dataframe(draft, draft_year=2030)
+
+        self.assertEqual(keepers.iloc[0]["Player"], "Jayden Daniels Was - QB")
+        self.assertEqual(keepers.iloc[0]["Keeper"], "Yes")
+
     def test_dataframe_calculates_keeper_round_and_output_columns(self):
         draft = parse_draft_text(DRAFT_TEXT)
 
@@ -69,6 +84,7 @@ Team D
                 {
                     "Manager": "Team C",
                     "Player": "George Kittle SF - TE",
+                    "Keeper": "",
                     "2030 Draft Position": "Round 4, Pick 7",
                     "2031 Round": 1,
                 }
