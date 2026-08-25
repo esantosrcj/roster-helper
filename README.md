@@ -77,3 +77,19 @@ Run the tests with:
 ```sh
 python3 -m unittest discover -s tests
 ```
+
+## Final roster export
+
+Use `modify_roster.py` when the input is a final-roster text export containing
+manager sections, player rows, and draft-position columns:
+
+```sh
+python3 modify_roster.py --draft-year 2030 final_roster.txt
+```
+
+The default output is `2031_final_roster_rounds.csv`. It has the same columns
+and keeper-round calculation as `draft_results_to_csv.py`. Undrafted players
+whose draft position is `-` and players drafted in Rounds 1–3 are omitted.
+
+Final-roster exports do not normally contain the `` keeper marker, so the
+`Keeper` column will be blank unless that marker is present in the player text.
